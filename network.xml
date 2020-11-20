@@ -1,0 +1,6 @@
+<network>
+    <neighbor port="8001"/>
+    <neighbor port="8002"/>
+    <neighbor port="8003"/>
+    <neighbor port="8000"/>
+</network>
