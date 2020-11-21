@@ -22,7 +22,8 @@ master_port = 8000
 def find_instance_time(p):
     net = root.findall('neighbor')
     for n in net:
-        print(n.find('wait_time'))
+        if int(n.attrib['port']) == p:
+            return float(n.attrib['wait_time'])
 
 
 def is_port_in_use(p_port):
@@ -73,8 +74,9 @@ class WorkerFunctions:
     store = {}
 
     def set_value(self, name, value):
-        print('setting ' + value + ' to ' + name)
+        print('Asignando ' + value + ' a ' + name)
         self.store[name] = value
+        print(self.store)
         for con in connections:
             con.set_value(name, value)
         return "200"
@@ -83,24 +85,27 @@ class WorkerFunctions:
         return self.store[name] if name in self.store else 'No encontrado'
 
     def inc(self, name):
-        print('Incrementing ' + name)
+        print('Incrementando ' + name)
         for con in connections:
             con.inc(name)
         if name in self.store and self.store[name].isnumeric():
             num = int(self.store[name])
             num += 1
             self.store[name] = str(num)
+            print(self.store)
             return "200"
         return "400"
 
     def delete(self, name):
-        print("Deleting " + name)
+        print("Borrando " + name)
         for con in connections:
             con.delete(name)
-        return self.store.pop(name, 'None')
+        deleted = self.store.pop(name, 'None')
+        print(self.store)
+        return deleted
 
     def expire(self, name, t):
-        print("Will expire " + name + "after " + t + "second(s)")
+        print(name + " va a expirar luego de " + t + "segundo(s)")
         for con in connections:
             con.expire(name, t)
         Timer(float(t), self.delete, name).start()
@@ -117,21 +122,24 @@ def start_server(ser):
 
 
 Thread(target=start_server, args=('',)).start()
-print(port)
+print('Conectado en el puerto: ' + str(port))
 
 
 def master_health_check():
     global server
     global port
+    wait_port = find_instance_time(port)
     if not is_port_in_use(master_port):
-        print('Connecting master port..')
-        server.shutdown()
-        port = master_port
-        server = SimpleXMLRPCServer(('localhost', port), requestHandler=RequestHandler)
-        server.register_instance(WorkerFunctions())
-        connect_to_neighbors()
-        Thread(target=start_server, args=('',)).start()
-    Timer(2.0, master_health_check).start()
+        time.sleep(wait_port)
+        if not is_port_in_use(master_port):
+            server.shutdown()
+            port = master_port
+            server = SimpleXMLRPCServer(('localhost', port), requestHandler=RequestHandler)
+            server.register_instance(WorkerFunctions())
+            connect_to_neighbors()
+            print('Nuevo master')
+            Thread(target=start_server, args=('',)).start()
+    Timer(float(wait_port), master_health_check).start()
 
 
 if port != master_port:
