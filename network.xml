@@ -1,6 +1,6 @@
 <network>
-    <neighbor port="8001"/>
-    <neighbor port="8002"/>
-    <neighbor port="8003"/>
-    <neighbor port="8000"/>
+    <neighbor port="8000" wait_time="0"/>
+    <neighbor port="8001" wait_time="2"/>
+    <neighbor port="8002" wait_time="4"/>
+    <neighbor port="8003" wait_time="6"/>
 </network>
